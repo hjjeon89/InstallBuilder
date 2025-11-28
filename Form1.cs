@@ -494,7 +494,19 @@ public partial class Form1 : Form
         string exeName = $"{projectName}.exe";
         string wxsPath = Path.Combine(Path.GetTempPath(), $"{projectName}.wxs");
         string wixobjPath = Path.Combine(Path.GetTempPath(), $"{projectName}.wixobj");
-        string msiPath = Path.Combine(outputDir, $"{projectName}_Setup.msi");
+
+        // 버전 정보 가져오기
+        string version = "1.0.0.0";
+        if (txtVersion.InvokeRequired)
+        {
+            txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
+        }
+        else
+        {
+            version = txtVersion.Text;
+        }
+
+        string msiPath = Path.Combine(outputDir, $"{projectName}_{version}_Setup.msi");
 
         // GUID 생성
         string productGuid = Guid.NewGuid().ToString().ToUpper();
@@ -661,7 +673,7 @@ AppPublisher={{#MyAppPublisher}}
 DefaultDirName={{autopf}}\{{#MyAppName}}
 DefaultGroupName={{#MyAppName}}
 OutputDir={outputDirForScript}
-OutputBaseFilename={{#MyAppName}}_Setup
+OutputBaseFilename={{#MyAppName}}_{{#MyAppVersion}}_Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -712,7 +724,7 @@ Filename: ""{{app}}\{{#MyAppExeName}}""; Description: ""{{cm:LaunchProgram,{{#St
             await RunProcessDirectlyAsync(isccPath, $"\"{scriptPath}\"");
 
             // 생성된 설치파일 확인
-            string installerPath = Path.Combine(outputDir, $"{projectName}_Setup.exe");
+            string installerPath = Path.Combine(outputDir, $"{projectName}_{version}_Setup.exe");
             if (File.Exists(installerPath))
             {
                 LogMessage($"✓ 설치파일 생성 완료: {installerPath}");
@@ -752,6 +764,17 @@ Filename: ""{{app}}\{{#MyAppExeName}}""; Description: ""{{cm:LaunchProgram,{{#St
     {
         string exeName = $"{projectName}.exe";
 
+        // 버전 정보 가져오기
+        string version = "1.0.0.0";
+        if (txtVersion.InvokeRequired)
+        {
+            txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
+        }
+        else
+        {
+            version = txtVersion.Text;
+        }
+
         // 7-Zip 경로 확인
         string[] possible7zPaths = new[]
         {
@@ -767,7 +790,7 @@ Filename: ""{{app}}\{{#MyAppExeName}}""; Description: ""{{cm:LaunchProgram,{{#St
 
             // 임시 압축 파일 생성
             string tempArchive = Path.Combine(Path.GetTempPath(), $"{projectName}_temp.7z");
-            string sfxPath = Path.Combine(outputDir, $"{projectName}_Setup.exe");
+            string sfxPath = Path.Combine(outputDir, $"{projectName}_{version}_Setup.exe");
 
             // 7z 압축 파일 생성
             await RunCommandAsync($"\"{sevenZipPath}\" a -t7z \"{tempArchive}\" \"{sourceDir}\\*\" -mx9");
@@ -850,10 +873,23 @@ del %SCRIPT%
 
     private async Task CreateZipFallbackAsync(string projectName, string sourceDir, string outputDir)
     {
+        // 버전 정보 가져오기
+        string version = "1.0.0.0";
+        if (txtVersion.InvokeRequired)
+        {
+            txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
+        }
+        else
+        {
+            version = txtVersion.Text;
+        }
+
+        string capturedVersion = version;
+
         await Task.Run(() =>
         {
             string exeName = $"{projectName}.exe";
-            string zipPath = Path.Combine(outputDir, $"{projectName}_Portable.zip");
+            string zipPath = Path.Combine(outputDir, $"{projectName}_{capturedVersion}_Portable.zip");
 
             // 바로가기 생성 배치 파일 추가
             string batContent = $@"@echo off
