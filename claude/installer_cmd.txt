@@ -6,14 +6,11 @@ C# Winform으로 만들거고 Release 빌드 버전으로 설치파일을 만들
 사용자가 원하는 만큼 경로를 추가할 수 있고 설치파일 생성 버튼을 누르면 명령을 수행하도록 한다.
 
 [프로젝트경로]
-1. D:\__work\__src\gitea\ModuleCycler_2025\GreenPowerCycler\GreenPowerCycler.csproj
-2. D:\__work\__src\gitea\ModuleCycler_2025\SubApps\ScheduleEditorPro\ScheduleEditorPro\ScheduleEditor.csproj
-3. D:\__work\__src\gitea\ModuleCycler_2025\SubApps\CyclerDataAnalyzer\CyclerDataAnalyzer\CyclerDataAnalyzer.csproj
-4. D:\__work\__src\gitea\CANDBEditor\CANDBEditor\CANDBEditor.csproj
+1. 사용자 설정 경로를 받아서 처리
 
 [기본 요구사항]
 install 파일은 아래 경로에 생성해줘.
-1. D:\__work\__src\gitea\ModuleCycler_2025\install
+1. D:\\installer
 zip 파일이 아닌 실제로 프로그램을 설치하는 exe 파일을 만든다.
 
 [추가 요구사항]
