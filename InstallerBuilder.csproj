@@ -7,7 +7,22 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <StartupObject>InstallerBuilder.Program</StartupObject>
+
+    <!-- 제작자 정보 (여기서 수정하세요) -->
+    <Version>1.1.2</Version>
+    <Authors>hjjeon</Authors>
+    <Company></Company>
+    <Copyright></Copyright>
+    <Description>Installer Builder Application</Description>
+    <Product>InstallBuilder</Product>
+
+    <!-- Authors 속성을 Assembly Metadata로 전달 -->
+    <GenerateAssemblyMetadataAttributes>true</GenerateAssemblyMetadataAttributes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="Authors" Value="$(Authors)" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.0" />

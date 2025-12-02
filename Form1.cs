@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection;
 
 namespace InstallerBuilder;
 
@@ -11,6 +12,54 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
+        CheckInnoSetupInstalled();
+    }
+
+    private void CheckInnoSetupInstalled()
+    {
+        string[] possibleIsccPaths = new[]
+        {
+            @"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            @"C:\Program Files\Inno Setup 6\ISCC.exe",
+            @"C:\Program Files (x86)\Inno Setup 5\ISCC.exe",
+            @"C:\Program Files\Inno Setup 5\ISCC.exe"
+        };
+
+        string? isccPath = possibleIsccPaths.FirstOrDefault(File.Exists);
+
+        if (isccPath == null)
+        {
+            DialogResult result = MessageBox.Show(
+                "Inno Setup이 설치되어 있지 않습니다.\n\n" +
+                "설치파일을 생성하려면 Inno Setup을 먼저 설치해주세요.\n\n" +
+                "다운로드 페이지로 이동하시겠습니까?\n" +
+                "URL: https://jrsoftware.org/isdl.php",
+                "Inno Setup 필요",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "https://jrsoftware.org/isdl.php",
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"브라우저를 열 수 없습니다.\n\n직접 다음 URL로 접속해주세요:\nhttps://jrsoftware.org/isdl.php\n\n오류: {ex.Message}",
+                        "오류",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error
+                    );
+                }
+            }
+        }
     }
 
     private void btnBrowseProject_Click(object? sender, EventArgs e)
@@ -496,7 +545,7 @@ public partial class Form1 : Form
         string wixobjPath = Path.Combine(Path.GetTempPath(), $"{projectName}.wixobj");
 
         // 버전 정보 가져오기
-        string version = "1.0.0.0";
+        string version = "1.0.0";
         if (txtVersion.InvokeRequired)
         {
             txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
@@ -531,7 +580,7 @@ public partial class Form1 : Form
         string wxsContent = $@"<?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
   <Product Name='{projectName}' Id='{productGuid}' UpgradeCode='{upgradeGuid}'
-    Language='1042' Codepage='949' Version='1.0.0.0' Manufacturer='GreenPower'>
+    Language='1042' Codepage='949' Version='1.0.0' Manufacturer='GreenPower'>
 
     <Package Id='*' Keywords='Installer' Description='{projectName} Installer'
       Comments='{projectName} Installer' Manufacturer='GreenPower'
@@ -650,7 +699,7 @@ public partial class Form1 : Form
         }
 
         // 버전 정보 가져오기
-        string version = "1.0.0.0";
+        string version = "1.0.0";
         if (txtVersion.InvokeRequired)
         {
             txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
@@ -765,7 +814,7 @@ Filename: ""{{app}}\{{#MyAppExeName}}""; Description: ""{{cm:LaunchProgram,{{#St
         string exeName = $"{projectName}.exe";
 
         // 버전 정보 가져오기
-        string version = "1.0.0.0";
+        string version = "1.0.0";
         if (txtVersion.InvokeRequired)
         {
             txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
@@ -874,7 +923,7 @@ del %SCRIPT%
     private async Task CreateZipFallbackAsync(string projectName, string sourceDir, string outputDir)
     {
         // 버전 정보 가져오기
-        string version = "1.0.0.0";
+        string version = "1.0.0";
         if (txtVersion.InvokeRequired)
         {
             txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
@@ -1274,5 +1323,47 @@ pause
                 }
             }
         }
+    }
+
+    // ========== 정보보기 ==========
+    private void btnAbout_Click(object? sender, EventArgs e)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+
+        // Assembly 정보 가져오기
+        string appName = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "InstallBuilder";
+        string version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                         ?? assembly.GetName().Version?.ToString() ?? "1.0.0";
+        string authors = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "";
+        string copyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "";
+        string description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "";
+
+        // Authors 속성은 csproj에서 AssemblyMetadataAttribute로 전달됨
+        var authorsAttr = assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+                                  .FirstOrDefault(a => a.Key == "Authors");
+        string author = authorsAttr?.Value ?? "";
+
+        var aboutInfo = new System.Text.StringBuilder();
+        aboutInfo.AppendLine($"프로그램: {appName}");
+        aboutInfo.AppendLine($"버전: {version}");
+
+        if (!string.IsNullOrWhiteSpace(author))
+            aboutInfo.AppendLine($"제작자: {author}");
+
+        if (!string.IsNullOrWhiteSpace(authors) && authors != author)
+            aboutInfo.AppendLine($"회사: {authors}");
+
+        if (!string.IsNullOrWhiteSpace(copyright))
+            aboutInfo.AppendLine($"저작권: {copyright}");
+
+        if (!string.IsNullOrWhiteSpace(description))
+            aboutInfo.AppendLine($"설명: {description}");
+
+        MessageBox.Show(
+            aboutInfo.ToString(),
+            "정보",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information
+        );
     }
 }
