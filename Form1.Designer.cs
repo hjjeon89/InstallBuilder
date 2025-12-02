@@ -28,6 +28,7 @@ partial class Form1
     /// </summary>
     private void InitializeComponent()
     {
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
         txtProjectPath = new TextBox();
         txtOutputPath = new TextBox();
         lblProjectPath = new Label();
@@ -283,17 +284,17 @@ partial class Form1
         lblVersion.Size = new Size(62, 15);
         lblVersion.TabIndex = 23;
         lblVersion.Text = "설치 버전:";
-        //
+        // 
         // txtVersion
-        //
+        // 
         txtVersion.Location = new Point(99, 437);
         txtVersion.Name = "txtVersion";
         txtVersion.Size = new Size(150, 23);
         txtVersion.TabIndex = 24;
         txtVersion.Text = "1.0.0";
-        //
+        // 
         // btnAbout
-        //
+        // 
         btnAbout.Location = new Point(705, 437);
         btnAbout.Name = "btnAbout";
         btnAbout.Size = new Size(83, 23);
@@ -301,7 +302,7 @@ partial class Form1
         btnAbout.Text = "정보보기";
         btnAbout.UseVisualStyleBackColor = true;
         btnAbout.Click += btnAbout_Click;
-        //
+        // 
         // Form1
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -333,6 +334,7 @@ partial class Form1
         Controls.Add(lblProjectPath);
         Controls.Add(txtOutputPath);
         Controls.Add(txtProjectPath);
+        Icon = (Icon)resources.GetObject("$this.Icon");
         Name = "Form1";
         Text = "InstallBuilder";
         ResumeLayout(false);

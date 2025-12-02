@@ -18,10 +18,15 @@
 
     <!-- Authors 속성을 Assembly Metadata로 전달 -->
     <GenerateAssemblyMetadataAttributes>true</GenerateAssemblyMetadataAttributes>
+    <ApplicationIcon>installbuilder_icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <AssemblyMetadata Include="Authors" Value="$(Authors)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="installbuilder_icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
