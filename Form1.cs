@@ -75,6 +75,32 @@ public partial class Form1 : Form
         }
     }
 
+    private void txtProjectPath_DragEnter(object? sender, DragEventArgs e)
+    {
+        if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+        {
+            e.Effect = DragDropEffects.Copy;
+        }
+    }
+
+    private void txtProjectPath_DragDrop(object? sender, DragEventArgs e)
+    {
+        if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
+        {
+            string file = files[0];
+            // .csproj 파일만 허용
+            if (file.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+            {
+                txtProjectPath.Text = file;
+                LogMessage($"프로젝트 파일 추가됨 (Drag & Drop): {file}");
+            }
+            else
+            {
+                MessageBox.Show("C# 프로젝트 파일(.csproj)만 선택 가능합니다.", "오류", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+    }
+
     private void btnBrowseOutput_Click(object? sender, EventArgs e)
     {
         using (FolderBrowserDialog fbd = new FolderBrowserDialog())
@@ -271,53 +297,73 @@ public partial class Form1 : Form
         CopyDirectory(buildOutput, tempInstallerDir);
         LogMessage($"빌드 출력물 복사 완료: {tempInstallerDir}");
 
-        // DLL 파일 복사
+        // DLL 파일 복사 (폴더 구조 유지)
         if (dllFiles.Count > 0)
         {
-            string dllDestPath = txtDllDestPath.Text;
-            string dllDestDir;
-
-            // [INSTALLDIR] 같은 특수 경로면 임시 디렉토리 기준으로 복사
-            if (dllDestPath.StartsWith("[") && dllDestPath.EndsWith("]"))
-            {
-                dllDestDir = Path.Combine(tempInstallerDir, "DllFiles");
-            }
-            else
-            {
-                dllDestDir = Path.Combine(tempInstallerDir, "DllFiles");
-            }
-
+            string dllDestDir = Path.Combine(tempInstallerDir, "DllFiles");
             Directory.CreateDirectory(dllDestDir);
+
+            // 공통 부모 디렉토리 찾기
+            string? commonParent = FindCommonParentDirectory(dllFiles);
+
             foreach (string dllFile in dllFiles)
             {
-                string destFile = Path.Combine(dllDestDir, Path.GetFileName(dllFile));
+                string relativePath;
+                if (!string.IsNullOrEmpty(commonParent))
+                {
+                    // 공통 부모 디렉토리 기준으로 상대 경로 계산
+                    relativePath = Path.GetRelativePath(commonParent, dllFile);
+                }
+                else
+                {
+                    // 공통 부모가 없으면 파일명만 사용
+                    relativePath = Path.GetFileName(dllFile);
+                }
+
+                string destFile = Path.Combine(dllDestDir, relativePath);
+                string? destFileDir = Path.GetDirectoryName(destFile);
+                if (!string.IsNullOrEmpty(destFileDir))
+                {
+                    Directory.CreateDirectory(destFileDir);
+                }
+
                 File.Copy(dllFile, destFile, true);
-                LogMessage($"DLL 복사: {Path.GetFileName(dllFile)} -> {dllDestDir}");
+                LogMessage($"DLL 복사: {Path.GetFileName(dllFile)} -> {relativePath}");
             }
         }
 
-        // 추가 파일 복사
+        // 추가 파일 복사 (폴더 구조 유지)
         if (additionalFiles.Count > 0)
         {
-            string additionalDestPath = txtAdditionalFilesDestPath.Text;
-            string additionalDestDir;
-
-            // [INSTALLDIR] 같은 특수 경로면 임시 디렉토리 기준으로 복사
-            if (additionalDestPath.StartsWith("[") && additionalDestPath.EndsWith("]"))
-            {
-                additionalDestDir = Path.Combine(tempInstallerDir, "AdditionalFiles");
-            }
-            else
-            {
-                additionalDestDir = Path.Combine(tempInstallerDir, "AdditionalFiles");
-            }
-
+            string additionalDestDir = Path.Combine(tempInstallerDir, "AdditionalFiles");
             Directory.CreateDirectory(additionalDestDir);
+
+            // 공통 부모 디렉토리 찾기
+            string? commonParent = FindCommonParentDirectory(additionalFiles);
+
             foreach (string addFile in additionalFiles)
             {
-                string destFile = Path.Combine(additionalDestDir, Path.GetFileName(addFile));
+                string relativePath;
+                if (!string.IsNullOrEmpty(commonParent))
+                {
+                    // 공통 부모 디렉토리 기준으로 상대 경로 계산
+                    relativePath = Path.GetRelativePath(commonParent, addFile);
+                }
+                else
+                {
+                    // 공통 부모가 없으면 파일명만 사용
+                    relativePath = Path.GetFileName(addFile);
+                }
+
+                string destFile = Path.Combine(additionalDestDir, relativePath);
+                string? destFileDir = Path.GetDirectoryName(destFile);
+                if (!string.IsNullOrEmpty(destFileDir))
+                {
+                    Directory.CreateDirectory(destFileDir);
+                }
+
                 File.Copy(addFile, destFile, true);
-                LogMessage($"추가 파일 복사: {Path.GetFileName(addFile)} -> {additionalDestDir}");
+                LogMessage($"추가 파일 복사: {Path.GetFileName(addFile)} -> {relativePath}");
             }
         }
 
@@ -661,8 +707,8 @@ public partial class Form1 : Form
         string exeName = $"{projectName}.exe";
         string scriptPath = Path.Combine(Path.GetTempPath(), $"{projectName}_setup.iss");
 
-        // GUID 생성
-        string appId = Guid.NewGuid().ToString().ToUpper();
+        // 프로그램 이름 기반 고정 GUID 생성 (동일 프로그램은 항상 같은 GUID 사용)
+        string appId = GenerateConsistentGuid(projectName);
 
         // Inno Setup 스크립트 생성
         // 주의:
@@ -676,9 +722,47 @@ public partial class Form1 : Form
         string outputDirForScript = outputDir.Replace("\\", "/");
         string sourceDirForScript = sourceDir.Replace("\\", "/");
 
+        // 버전 및 옵션 정보 가져오기
+        string version = "1.0.0";
+        string defaultInstallPath = "{autopf}\\{#MyAppName}";
+        bool deleteFilesOnUninstall = true;
+        bool overwriteFiles = true;
+
+        if (txtVersion.InvokeRequired)
+        {
+            txtVersion.Invoke(new Action(() =>
+            {
+                version = txtVersion.Text;
+                defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
+                deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
+                overwriteFiles = chkOverwriteFiles.Checked;
+            }));
+        }
+        else
+        {
+            version = txtVersion.Text;
+            defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
+            deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
+            overwriteFiles = chkOverwriteFiles.Checked;
+        }
+
         // 복사 위치 경로 변환 (Inno Setup 형식으로)
         string dllDestInnoPath = ConvertToInnoSetupPath(txtDllDestPath.Text);
         string additionalDestInnoPath = ConvertToInnoSetupPath(txtAdditionalFilesDestPath.Text);
+
+        // [Tasks] 섹션 생성 (설치 시 사용자가 선택 가능)
+        var tasksSection = new System.Text.StringBuilder();
+        bool hasConfigFiles = dllFiles.Count > 0 || additionalFiles.Count > 0;
+
+        if (hasConfigFiles)
+        {
+            // 기본값 설정 (빌더에서 설정한 값 기준)
+            string overwriteChecked = overwriteFiles ? "" : " unchecked";
+            string deleteChecked = deleteFilesOnUninstall ? "" : " unchecked";
+
+            tasksSection.AppendLine($@"Name: ""overwriteconfig""; Description: ""기존 설정/DLL 파일이 있어도 새 파일로 덮어쓰기""; Flags:{overwriteChecked}");
+            tasksSection.AppendLine($@"Name: ""deleteconfig""; Description: ""프로그램 제거 시 설정/DLL 파일도 함께 삭제""; Flags:{deleteChecked}");
+        }
 
         // [Files] 섹션 생성
         var filesSection = new System.Text.StringBuilder();
@@ -686,27 +770,33 @@ public partial class Form1 : Form
         // 기본 빌드 출력물 (DllFiles, AdditionalFiles 폴더 제외)
         filesSection.AppendLine($@"Source: ""{sourceDirForScript}/*""; DestDir: ""{{app}}""; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: ""DllFiles,AdditionalFiles""");
 
-        // DLL 파일들
+        // DLL 파일들 (폴더 구조 유지) - Tasks 조건부 처리
         if (dllFiles.Count > 0)
         {
-            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/DllFiles/*""; DestDir: ""{dllDestInnoPath}""; Flags: ignoreversion");
+            // 덮어쓰기 선택 시
+            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/DllFiles/*""; DestDir: ""{dllDestInnoPath}""; Flags: ignoreversion recursesubdirs createallsubdirs; Tasks: overwriteconfig");
+            // 덮어쓰지 않기 선택 시 (기존 파일 유지)
+            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/DllFiles/*""; DestDir: ""{dllDestInnoPath}""; Flags: onlyifdoesntexist recursesubdirs createallsubdirs; Tasks: not overwriteconfig");
         }
 
-        // 추가 파일들
+        // 추가 파일들 (폴더 구조 유지) - Tasks 조건부 처리
         if (additionalFiles.Count > 0)
         {
-            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/AdditionalFiles/*""; DestDir: ""{additionalDestInnoPath}""; Flags: ignoreversion");
+            // 덮어쓰기 선택 시
+            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/AdditionalFiles/*""; DestDir: ""{additionalDestInnoPath}""; Flags: ignoreversion recursesubdirs createallsubdirs; Tasks: overwriteconfig");
+            // 덮어쓰지 않기 선택 시 (기존 파일 유지)
+            filesSection.AppendLine($@"Source: ""{sourceDirForScript}/AdditionalFiles/*""; DestDir: ""{additionalDestInnoPath}""; Flags: onlyifdoesntexist recursesubdirs createallsubdirs; Tasks: not overwriteconfig");
         }
 
-        // 버전 정보 가져오기
-        string version = "1.0.0";
-        if (txtVersion.InvokeRequired)
+        // [UninstallDelete] 섹션 생성 (Tasks 조건부)
+        var uninstallDeleteSection = new System.Text.StringBuilder();
+        if (dllFiles.Count > 0)
         {
-            txtVersion.Invoke(new Action(() => { version = txtVersion.Text; }));
+            uninstallDeleteSection.AppendLine($@"Type: filesandordirs; Name: ""{dllDestInnoPath}""; Tasks: deleteconfig");
         }
-        else
+        if (additionalFiles.Count > 0)
         {
-            version = txtVersion.Text;
+            uninstallDeleteSection.AppendLine($@"Type: filesandordirs; Name: ""{additionalDestInnoPath}""; Tasks: deleteconfig");
         }
 
         string script = $@"#define MyAppName ""{projectName}""
@@ -719,8 +809,9 @@ AppId={{{{{appId}}}}}
 AppName={{#MyAppName}}
 AppVersion={{#MyAppVersion}}
 AppPublisher={{#MyAppPublisher}}
-DefaultDirName={{autopf}}\{{#MyAppName}}
+DefaultDirName={defaultInstallPath}
 DefaultGroupName={{#MyAppName}}
+UninstallDisplayName={{#MyAppName}}
 OutputDir={outputDirForScript}
 OutputBaseFilename={{#MyAppName}}_{{#MyAppVersion}}_Setup
 Compression=lzma2
@@ -732,6 +823,9 @@ PrivilegesRequired=lowest
 [Languages]
 Name: ""korean""; MessagesFile: ""compiler:Languages\Korean.isl""
 
+{(tasksSection.Length > 0 ? $@"[Tasks]
+{tasksSection}" : "")}
+
 [Files]
 {filesSection}
 
@@ -741,6 +835,78 @@ Name: ""{{autodesktop}}\{{#MyAppName}}""; Filename: ""{{app}}\{{#MyAppExeName}}"
 
 [Run]
 Filename: ""{{app}}\{{#MyAppExeName}}""; Description: ""{{cm:LaunchProgram,{{#StringChange(MyAppName, '&', '&&')}}}}""; Flags: nowait postinstall skipifsilent
+
+{(uninstallDeleteSection.Length > 0 ? $@"[UninstallDelete]
+{uninstallDeleteSection}" : "")}
+
+[Code]
+var
+  UninstallProgressPage: TOutputProgressWizardPage;
+
+procedure InitializeWizard;
+begin
+  UninstallProgressPage := CreateOutputProgressPage('기존 버전 제거', '이전 버전을 제거하는 중입니다...');
+end;
+
+function InitializeSetup(): Boolean;
+var
+  ResultCode: Integer;
+  UninstallString: String;
+  UninstallKey: String;
+  InstallPath: String;
+  UninstallExe: String;
+begin
+  Result := True;
+  UninstallKey := 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{{{{{appId}}}}}_is1';
+
+  // 기존 버전이 설치되어 있는지 확인 (레지스트리 조회)
+  if RegQueryStringValue(HKLM, UninstallKey, 'UninstallString', UninstallString) or
+     RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', UninstallString) then
+  begin
+    // UninstallString에서 따옴표 제거
+    UninstallString := RemoveQuotes(UninstallString);
+
+    // 사용자에게 기존 버전 제거 여부 확인
+    if MsgBox('이 프로그램의 이전 버전이 이미 설치되어 있습니다.' + #13#10 + #13#10 +
+              '기존 버전: ' + UninstallString + #13#10 + #13#10 +
+              '기존 버전을 자동으로 제거한 후 새 버전을 설치합니다.' + #13#10 + #13#10 +
+              '계속하시겠습니까?', mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      // 제거 진행 화면 표시
+      UninstallProgressPage.Show;
+      try
+        UninstallProgressPage.SetText('기존 버전을 제거하는 중입니다...', '잠시만 기다려주세요. (unins000.exe 실행 중)');
+        UninstallProgressPage.SetProgress(0, 100);
+
+        // unins000.exe 실행 (SILENT 모드)
+        if Exec(UninstallString, '/SILENT /NORESTART /SUPPRESSMSGBOXES', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+        begin
+          UninstallProgressPage.SetProgress(100, 100);
+          Sleep(1000);  // 파일 정리 대기
+          // 제거 성공
+          Result := True;
+          MsgBox('기존 버전이 성공적으로 제거되었습니다.' + #13#10 + #13#10 +
+                 '이어서 새 버전 설치를 진행합니다.', mbInformation, MB_OK);
+        end
+        else
+        begin
+          // 제거 실패 시 메시지 표시
+          MsgBox('기존 프로그램을 제거하는 중 오류가 발생했습니다.' + #13#10 +
+                 '종료 코드: ' + IntToStr(ResultCode) + #13#10 + #13#10 +
+                 '수동으로 프로그램을 제거한 후 다시 설치해주세요.', mbError, MB_OK);
+          Result := False;
+        end;
+      finally
+        UninstallProgressPage.Hide;
+      end;
+    end
+    else
+    begin
+      // 사용자가 '아니오'를 선택한 경우 설치 취소
+      Result := False;
+    end;
+  end;
+end;
 ";
 
         // 출력 디렉토리가 존재하는지 확인하고 생성
@@ -1144,6 +1310,69 @@ pause
         }
     }
 
+    // ========== 프로그램 이름 기반 고정 GUID 생성 ==========
+    private string GenerateConsistentGuid(string projectName)
+    {
+        // 프로그램 이름을 기반으로 항상 같은 GUID 생성
+        using (var md5 = System.Security.Cryptography.MD5.Create())
+        {
+            byte[] hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(projectName));
+            Guid guid = new Guid(hash);
+            return guid.ToString().ToUpper();
+        }
+    }
+
+    // ========== 공통 부모 디렉토리 찾기 ==========
+    private string? FindCommonParentDirectory(List<string> filePaths)
+    {
+        if (filePaths.Count == 0)
+            return null;
+
+        if (filePaths.Count == 1)
+            return Path.GetDirectoryName(filePaths[0]);
+
+        // 모든 파일의 디렉토리 경로를 가져옴
+        var directories = filePaths.Select(f => Path.GetDirectoryName(f) ?? "").ToList();
+
+        // 첫 번째 디렉토리를 기준으로 공통 부분 찾기
+        string commonPath = directories[0];
+
+        foreach (var dir in directories.Skip(1))
+        {
+            commonPath = GetCommonPath(commonPath, dir);
+            if (string.IsNullOrEmpty(commonPath))
+                return null;
+        }
+
+        return commonPath;
+    }
+
+    private string GetCommonPath(string path1, string path2)
+    {
+        var parts1 = path1.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var parts2 = path2.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        var commonParts = new List<string>();
+        int minLength = Math.Min(parts1.Length, parts2.Length);
+
+        for (int i = 0; i < minLength; i++)
+        {
+            if (string.Equals(parts1[i], parts2[i], StringComparison.OrdinalIgnoreCase))
+            {
+                commonParts.Add(parts1[i]);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (commonParts.Count == 0)
+            return "";
+
+        return string.Join(Path.DirectorySeparatorChar.ToString(), commonParts);
+    }
+
     // ========== 경로 변환 ==========
     private string ConvertToInnoSetupPath(string path)
     {
@@ -1200,13 +1429,22 @@ pause
 
     private void btnRemoveDll_Click(object? sender, EventArgs e)
     {
-        if (lstDllFiles.SelectedIndex >= 0)
+        if (lstDllFiles.SelectedItems.Count > 0)
         {
-            int index = lstDllFiles.SelectedIndex;
-            string removedFile = dllFiles[index];
-            dllFiles.RemoveAt(index);
-            lstDllFiles.Items.RemoveAt(index);
-            LogMessage($"DLL 제거됨: {removedFile}");
+            // 선택된 항목들을 임시 리스트에 저장 (역순으로 제거하기 위해)
+            var selectedItems = lstDllFiles.SelectedItems.Cast<string>().ToList();
+
+            foreach (string item in selectedItems)
+            {
+                int index = lstDllFiles.Items.IndexOf(item);
+                if (index >= 0 && index < dllFiles.Count)
+                {
+                    string removedFile = dllFiles[index];
+                    dllFiles.RemoveAt(index);
+                    lstDllFiles.Items.RemoveAt(index);
+                    LogMessage($"DLL 제거됨: {removedFile}");
+                }
+            }
         }
         else
         {
@@ -1275,13 +1513,22 @@ pause
 
     private void btnRemoveAdditionalFile_Click(object? sender, EventArgs e)
     {
-        if (lstAdditionalFiles.SelectedIndex >= 0)
+        if (lstAdditionalFiles.SelectedItems.Count > 0)
         {
-            int index = lstAdditionalFiles.SelectedIndex;
-            string removedFile = additionalFiles[index];
-            additionalFiles.RemoveAt(index);
-            lstAdditionalFiles.Items.RemoveAt(index);
-            LogMessage($"파일 제거됨: {removedFile}");
+            // 선택된 항목들을 임시 리스트에 저장 (역순으로 제거하기 위해)
+            var selectedItems = lstAdditionalFiles.SelectedItems.Cast<string>().ToList();
+
+            foreach (string item in selectedItems)
+            {
+                int index = lstAdditionalFiles.Items.IndexOf(item);
+                if (index >= 0 && index < additionalFiles.Count)
+                {
+                    string removedFile = additionalFiles[index];
+                    additionalFiles.RemoveAt(index);
+                    lstAdditionalFiles.Items.RemoveAt(index);
+                    LogMessage($"파일 제거됨: {removedFile}");
+                }
+            }
         }
         else
         {
@@ -1321,6 +1568,28 @@ pause
                     lstAdditionalFiles.Items.Add(file);
                     LogMessage($"파일 추가됨 (Drag & Drop): {file}");
                 }
+            }
+        }
+    }
+
+    // ========== 기본 설치 경로 찾아보기 ==========
+    private void btnBrowseDefaultInstallPath_Click(object? sender, EventArgs e)
+    {
+        using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+        {
+            fbd.Description = "기본 설치 경로 선택\n(Inno Setup 특수 경로도 직접 입력 가능합니다)";
+
+            // 현재 경로가 실제 경로인 경우에만 초기 경로로 설정
+            if (!string.IsNullOrEmpty(txtDefaultInstallPath.Text) &&
+                !txtDefaultInstallPath.Text.StartsWith("{") &&
+                Directory.Exists(txtDefaultInstallPath.Text))
+            {
+                fbd.SelectedPath = txtDefaultInstallPath.Text;
+            }
+
+            if (fbd.ShowDialog() == DialogResult.OK)
+            {
+                txtDefaultInstallPath.Text = fbd.SelectedPath;
             }
         }
     }
