@@ -9,10 +9,218 @@ public partial class Form1 : Form
     private List<string> dllFiles = new List<string>();
     private List<string> additionalFiles = new List<string>();
 
+    private bool isLoadingHistory = false;
+
     public Form1()
     {
         InitializeComponent();
         CheckInnoSetupInstalled();
+    }
+
+    private void Form1_Load(object? sender, EventArgs e)
+    {
+        var lastUsed = HistoryManager.GetLastUsed();
+        if (lastUsed != null)
+        {
+            ApplyHistory(lastUsed);
+        }
+    }
+
+    private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        SaveCurrentHistory();
+    }
+
+    private ProjectHistory CreateHistoryFromForm()
+    {
+        return new ProjectHistory
+        {
+            ProjectPath = txtProjectPath.Text,
+            OutputPath = txtOutputPath.Text,
+            AppName = txtAppName.Text,
+            Version = txtVersion.Text,
+            DefaultInstallPath = txtDefaultInstallPath.Text,
+            DllDestPath = txtDllDestPath.Text,
+            AdditionalFilesDestPath = txtAdditionalFilesDestPath.Text,
+            DllFiles = new List<string>(dllFiles),
+            AdditionalFiles = new List<string>(additionalFiles),
+            OverwriteFiles = chkOverwriteFiles.Checked,
+            DeleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked,
+            LastModified = DateTime.Now
+        };
+    }
+
+    private void ApplyHistory(ProjectHistory history)
+    {
+        isLoadingHistory = true;
+        try
+        {
+            txtProjectPath.Text = history.ProjectPath;
+            txtOutputPath.Text = history.OutputPath;
+            txtAppName.Text = history.AppName;
+            txtVersion.Text = history.Version;
+            txtDefaultInstallPath.Text = history.DefaultInstallPath;
+            txtDllDestPath.Text = history.DllDestPath;
+            txtAdditionalFilesDestPath.Text = history.AdditionalFilesDestPath;
+
+            dllFiles = new List<string>(history.DllFiles ?? new List<string>());
+            lstDllFiles.Items.Clear();
+            foreach (var file in dllFiles)
+            {
+                lstDllFiles.Items.Add(file);
+            }
+
+            additionalFiles = new List<string>(history.AdditionalFiles ?? new List<string>());
+            lstAdditionalFiles.Items.Clear();
+            foreach (var file in additionalFiles)
+            {
+                lstAdditionalFiles.Items.Add(file);
+            }
+
+            chkOverwriteFiles.Checked = history.OverwriteFiles;
+            chkDeleteFilesOnUninstall.Checked = history.DeleteFilesOnUninstall;
+        }
+        finally
+        {
+            isLoadingHistory = false;
+        }
+    }
+
+    private void SaveCurrentHistory()
+    {
+        if (string.IsNullOrWhiteSpace(txtProjectPath.Text))
+            return;
+
+        var history = CreateHistoryFromForm();
+        HistoryManager.Save(history);
+    }
+
+    private void btnLoadHistory_Click(object? sender, EventArgs e)
+    {
+        ShowHistorySelectionDialog();
+    }
+
+    private void loadHistoryToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        ShowHistorySelectionDialog();
+    }
+
+    private void saveCurrentToolStripMenuItem_Click(object? sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(txtProjectPath.Text))
+        {
+            MessageBox.Show("프로젝트 경로가 비어있어 저장할 수 없습니다.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        SaveCurrentHistory();
+        MessageBox.Show("현재 설정이 저장되었습니다.", "저장 완료", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void ShowHistorySelectionDialog()
+    {
+        var histories = HistoryManager.GetAllHistories();
+
+        if (histories.Count == 0)
+        {
+            MessageBox.Show("저장된 히스토리가 없습니다.", "알림", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using (var form = new Form())
+        {
+            form.Text = "히스토리 선택";
+            form.Size = new Size(500, 350);
+            form.StartPosition = FormStartPosition.CenterParent;
+            form.FormBorderStyle = FormBorderStyle.FixedDialog;
+            form.MaximizeBox = false;
+            form.MinimizeBox = false;
+
+            var listView = new ListView
+            {
+                Location = new Point(12, 12),
+                Size = new Size(460, 240),
+                View = View.Details,
+                FullRowSelect = true,
+                GridLines = true
+            };
+            listView.Columns.Add("프로젝트", 200);
+            listView.Columns.Add("마지막 수정", 150);
+            listView.Columns.Add("버전", 80);
+
+            foreach (var history in histories)
+            {
+                var item = new ListViewItem(Path.GetFileNameWithoutExtension(history.ProjectPath));
+                item.SubItems.Add(history.LastModified.ToString("yyyy-MM-dd HH:mm"));
+                item.SubItems.Add(history.Version);
+                item.Tag = history;
+                listView.Items.Add(item);
+            }
+
+            var btnOk = new Button
+            {
+                Text = "로드",
+                Location = new Point(316, 268),
+                Size = new Size(75, 30),
+                DialogResult = DialogResult.OK
+            };
+
+            var btnCancel = new Button
+            {
+                Text = "취소",
+                Location = new Point(397, 268),
+                Size = new Size(75, 30),
+                DialogResult = DialogResult.Cancel
+            };
+
+            form.Controls.Add(listView);
+            form.Controls.Add(btnOk);
+            form.Controls.Add(btnCancel);
+            form.AcceptButton = btnOk;
+            form.CancelButton = btnCancel;
+
+            listView.DoubleClick += (s, e) =>
+            {
+                if (listView.SelectedItems.Count > 0)
+                {
+                    form.DialogResult = DialogResult.OK;
+                    form.Close();
+                }
+            };
+
+            if (form.ShowDialog(this) == DialogResult.OK && listView.SelectedItems.Count > 0)
+            {
+                if (listView.SelectedItems[0].Tag is ProjectHistory selectedHistory)
+                {
+                    ApplyHistory(selectedHistory);
+                }
+            }
+        }
+    }
+
+    private void CheckAndLoadProjectHistory(string projectPath)
+    {
+        if (isLoadingHistory || string.IsNullOrWhiteSpace(projectPath))
+            return;
+
+        if (HistoryManager.HasHistory(projectPath))
+        {
+            var result = MessageBox.Show(
+                "이 프로젝트의 이전 설정이 있습니다.\n불러오시겠습니까?",
+                "히스토리 로드",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (result == DialogResult.Yes)
+            {
+                var history = HistoryManager.Load(projectPath);
+                if (history != null)
+                {
+                    ApplyHistory(history);
+                }
+            }
+        }
     }
 
     private void CheckInnoSetupInstalled()
@@ -83,6 +291,8 @@ public partial class Form1 : Form
         {
             txtAppName.Text = Path.GetFileNameWithoutExtension(projectPath);
         }
+        // 프로젝트 히스토리 확인 및 로드
+        CheckAndLoadProjectHistory(projectPath);
     }
 
     private void txtProjectPath_DragEnter(object? sender, DragEventArgs e)

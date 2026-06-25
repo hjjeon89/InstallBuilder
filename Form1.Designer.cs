@@ -62,21 +62,27 @@ partial class Form1
         btnBrowseDefaultInstallPath = new Button();
         chkDeleteFilesOnUninstall = new CheckBox();
         chkOverwriteFiles = new CheckBox();
+        menuStrip1 = new MenuStrip();
+        fileToolStripMenuItem = new ToolStripMenuItem();
+        loadHistoryToolStripMenuItem = new ToolStripMenuItem();
+        saveCurrentToolStripMenuItem = new ToolStripMenuItem();
+        btnLoadHistory = new Button();
+        menuStrip1.SuspendLayout();
         SuspendLayout();
         // 
         // txtProjectPath
         // 
         txtProjectPath.AllowDrop = true;
-        txtProjectPath.Location = new Point(99, 20);
+        txtProjectPath.Location = new Point(99, 44);
         txtProjectPath.Name = "txtProjectPath";
-        txtProjectPath.Size = new Size(600, 23);
+        txtProjectPath.Size = new Size(522, 23);
         txtProjectPath.TabIndex = 0;
         txtProjectPath.DragDrop += txtProjectPath_DragDrop;
         txtProjectPath.DragEnter += txtProjectPath_DragEnter;
         // 
         // txtOutputPath
         // 
-        txtOutputPath.Location = new Point(99, 520);
+        txtOutputPath.Location = new Point(99, 544);
         txtOutputPath.Name = "txtOutputPath";
         txtOutputPath.Size = new Size(600, 23);
         txtOutputPath.TabIndex = 1;
@@ -85,7 +91,7 @@ partial class Form1
         // lblProjectPath
         // 
         lblProjectPath.AutoSize = true;
-        lblProjectPath.Location = new Point(12, 23);
+        lblProjectPath.Location = new Point(12, 47);
         lblProjectPath.Name = "lblProjectPath";
         lblProjectPath.Size = new Size(86, 15);
         lblProjectPath.TabIndex = 2;
@@ -94,7 +100,7 @@ partial class Form1
         // lblOutputPath
         // 
         lblOutputPath.AutoSize = true;
-        lblOutputPath.Location = new Point(12, 523);
+        lblOutputPath.Location = new Point(12, 547);
         lblOutputPath.Name = "lblOutputPath";
         lblOutputPath.Size = new Size(62, 15);
         lblOutputPath.TabIndex = 3;
@@ -102,9 +108,9 @@ partial class Form1
         // 
         // btnBrowseProject
         // 
-        btnBrowseProject.Location = new Point(705, 20);
+        btnBrowseProject.Location = new Point(627, 44);
         btnBrowseProject.Name = "btnBrowseProject";
-        btnBrowseProject.Size = new Size(83, 23);
+        btnBrowseProject.Size = new Size(77, 23);
         btnBrowseProject.TabIndex = 4;
         btnBrowseProject.Text = "찾아보기...";
         btnBrowseProject.UseVisualStyleBackColor = true;
@@ -112,7 +118,7 @@ partial class Form1
         // 
         // btnBrowseOutput
         // 
-        btnBrowseOutput.Location = new Point(705, 520);
+        btnBrowseOutput.Location = new Point(705, 544);
         btnBrowseOutput.Name = "btnBrowseOutput";
         btnBrowseOutput.Size = new Size(83, 23);
         btnBrowseOutput.TabIndex = 5;
@@ -123,7 +129,7 @@ partial class Form1
         // btnBuild
         // 
         btnBuild.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-        btnBuild.Location = new Point(12, 550);
+        btnBuild.Location = new Point(12, 574);
         btnBuild.Name = "btnBuild";
         btnBuild.Size = new Size(776, 40);
         btnBuild.TabIndex = 6;
@@ -133,7 +139,7 @@ partial class Form1
         // 
         // txtLog
         // 
-        txtLog.Location = new Point(12, 616);
+        txtLog.Location = new Point(12, 640);
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
@@ -144,7 +150,7 @@ partial class Form1
         // lblLog
         // 
         lblLog.AutoSize = true;
-        lblLog.Location = new Point(12, 596);
+        lblLog.Location = new Point(12, 620);
         lblLog.Name = "lblLog";
         lblLog.Size = new Size(34, 15);
         lblLog.TabIndex = 8;
@@ -154,7 +160,7 @@ partial class Form1
         // 
         lblDllFiles.AutoSize = true;
         lblDllFiles.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-        lblDllFiles.Location = new Point(12, 60);
+        lblDllFiles.Location = new Point(12, 84);
         lblDllFiles.Name = "lblDllFiles";
         lblDllFiles.Size = new Size(188, 15);
         lblDllFiles.TabIndex = 9;
@@ -164,7 +170,7 @@ partial class Form1
         // 
         lstDllFiles.AllowDrop = true;
         lstDllFiles.FormattingEnabled = true;
-        lstDllFiles.Location = new Point(12, 78);
+        lstDllFiles.Location = new Point(12, 102);
         lstDllFiles.Name = "lstDllFiles";
         lstDllFiles.SelectionMode = SelectionMode.MultiExtended;
         lstDllFiles.Size = new Size(776, 94);
@@ -174,7 +180,7 @@ partial class Form1
         // 
         // btnAddDll
         // 
-        btnAddDll.Location = new Point(12, 178);
+        btnAddDll.Location = new Point(12, 202);
         btnAddDll.Name = "btnAddDll";
         btnAddDll.Size = new Size(120, 30);
         btnAddDll.TabIndex = 11;
@@ -184,7 +190,7 @@ partial class Form1
         // 
         // btnRemoveDll
         // 
-        btnRemoveDll.Location = new Point(138, 178);
+        btnRemoveDll.Location = new Point(138, 202);
         btnRemoveDll.Name = "btnRemoveDll";
         btnRemoveDll.Size = new Size(120, 30);
         btnRemoveDll.TabIndex = 12;
@@ -194,7 +200,7 @@ partial class Form1
         // 
         // txtDllDestPath
         // 
-        txtDllDestPath.Location = new Point(99, 214);
+        txtDllDestPath.Location = new Point(99, 238);
         txtDllDestPath.Name = "txtDllDestPath";
         txtDllDestPath.Size = new Size(600, 23);
         txtDllDestPath.TabIndex = 13;
@@ -203,7 +209,7 @@ partial class Form1
         // lblDllDestPath
         // 
         lblDllDestPath.AutoSize = true;
-        lblDllDestPath.Location = new Point(12, 217);
+        lblDllDestPath.Location = new Point(12, 241);
         lblDllDestPath.Name = "lblDllDestPath";
         lblDllDestPath.Size = new Size(62, 15);
         lblDllDestPath.TabIndex = 14;
@@ -211,7 +217,7 @@ partial class Form1
         // 
         // btnBrowseDllDest
         // 
-        btnBrowseDllDest.Location = new Point(705, 214);
+        btnBrowseDllDest.Location = new Point(705, 238);
         btnBrowseDllDest.Name = "btnBrowseDllDest";
         btnBrowseDllDest.Size = new Size(83, 23);
         btnBrowseDllDest.TabIndex = 15;
@@ -223,7 +229,7 @@ partial class Form1
         // 
         lblAdditionalFiles.AutoSize = true;
         lblAdditionalFiles.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-        lblAdditionalFiles.Location = new Point(12, 250);
+        lblAdditionalFiles.Location = new Point(12, 274);
         lblAdditionalFiles.Name = "lblAdditionalFiles";
         lblAdditionalFiles.Size = new Size(265, 15);
         lblAdditionalFiles.TabIndex = 16;
@@ -233,7 +239,7 @@ partial class Form1
         // 
         lstAdditionalFiles.AllowDrop = true;
         lstAdditionalFiles.FormattingEnabled = true;
-        lstAdditionalFiles.Location = new Point(12, 268);
+        lstAdditionalFiles.Location = new Point(12, 292);
         lstAdditionalFiles.Name = "lstAdditionalFiles";
         lstAdditionalFiles.SelectionMode = SelectionMode.MultiExtended;
         lstAdditionalFiles.Size = new Size(776, 94);
@@ -243,7 +249,7 @@ partial class Form1
         // 
         // btnAddAdditionalFile
         // 
-        btnAddAdditionalFile.Location = new Point(12, 368);
+        btnAddAdditionalFile.Location = new Point(12, 392);
         btnAddAdditionalFile.Name = "btnAddAdditionalFile";
         btnAddAdditionalFile.Size = new Size(120, 30);
         btnAddAdditionalFile.TabIndex = 18;
@@ -253,7 +259,7 @@ partial class Form1
         // 
         // btnRemoveAdditionalFile
         // 
-        btnRemoveAdditionalFile.Location = new Point(138, 368);
+        btnRemoveAdditionalFile.Location = new Point(138, 392);
         btnRemoveAdditionalFile.Name = "btnRemoveAdditionalFile";
         btnRemoveAdditionalFile.Size = new Size(120, 30);
         btnRemoveAdditionalFile.TabIndex = 19;
@@ -263,7 +269,7 @@ partial class Form1
         // 
         // txtAdditionalFilesDestPath
         // 
-        txtAdditionalFilesDestPath.Location = new Point(99, 404);
+        txtAdditionalFilesDestPath.Location = new Point(99, 428);
         txtAdditionalFilesDestPath.Name = "txtAdditionalFilesDestPath";
         txtAdditionalFilesDestPath.Size = new Size(600, 23);
         txtAdditionalFilesDestPath.TabIndex = 20;
@@ -272,7 +278,7 @@ partial class Form1
         // lblAdditionalFilesDestPath
         // 
         lblAdditionalFilesDestPath.AutoSize = true;
-        lblAdditionalFilesDestPath.Location = new Point(12, 407);
+        lblAdditionalFilesDestPath.Location = new Point(12, 431);
         lblAdditionalFilesDestPath.Name = "lblAdditionalFilesDestPath";
         lblAdditionalFilesDestPath.Size = new Size(62, 15);
         lblAdditionalFilesDestPath.TabIndex = 21;
@@ -280,7 +286,7 @@ partial class Form1
         // 
         // btnBrowseAdditionalFilesDest
         // 
-        btnBrowseAdditionalFilesDest.Location = new Point(705, 404);
+        btnBrowseAdditionalFilesDest.Location = new Point(705, 428);
         btnBrowseAdditionalFilesDest.Name = "btnBrowseAdditionalFilesDest";
         btnBrowseAdditionalFilesDest.Size = new Size(83, 23);
         btnBrowseAdditionalFilesDest.TabIndex = 22;
@@ -291,7 +297,7 @@ partial class Form1
         // lblVersion
         // 
         lblVersion.AutoSize = true;
-        lblVersion.Location = new Point(12, 440);
+        lblVersion.Location = new Point(12, 464);
         lblVersion.Name = "lblVersion";
         lblVersion.Size = new Size(62, 15);
         lblVersion.TabIndex = 23;
@@ -299,7 +305,7 @@ partial class Form1
         // 
         // txtVersion
         // 
-        txtVersion.Location = new Point(99, 437);
+        txtVersion.Location = new Point(99, 461);
         txtVersion.Name = "txtVersion";
         txtVersion.Size = new Size(150, 23);
         txtVersion.TabIndex = 24;
@@ -308,7 +314,7 @@ partial class Form1
         // lblAppName
         // 
         lblAppName.AutoSize = true;
-        lblAppName.Location = new Point(12, 489);
+        lblAppName.Location = new Point(12, 513);
         lblAppName.Name = "lblAppName";
         lblAppName.Size = new Size(70, 15);
         lblAppName.TabIndex = 50;
@@ -316,7 +322,7 @@ partial class Form1
         // 
         // txtAppName
         // 
-        txtAppName.Location = new Point(99, 486);
+        txtAppName.Location = new Point(99, 510);
         txtAppName.Name = "txtAppName";
         txtAppName.PlaceholderText = "제어판에 표시될 프로그램 이름 (비워두면 프로젝트명 사용)";
         txtAppName.Size = new Size(600, 23);
@@ -324,7 +330,7 @@ partial class Form1
         // 
         // btnAbout
         // 
-        btnAbout.Location = new Point(705, 437);
+        btnAbout.Location = new Point(705, 461);
         btnAbout.Name = "btnAbout";
         btnAbout.Size = new Size(83, 23);
         btnAbout.TabIndex = 25;
@@ -335,7 +341,7 @@ partial class Form1
         // lblDefaultInstallPath
         // 
         lblDefaultInstallPath.AutoSize = true;
-        lblDefaultInstallPath.Location = new Point(255, 440);
+        lblDefaultInstallPath.Location = new Point(255, 464);
         lblDefaultInstallPath.Name = "lblDefaultInstallPath";
         lblDefaultInstallPath.Size = new Size(90, 15);
         lblDefaultInstallPath.TabIndex = 26;
@@ -343,7 +349,7 @@ partial class Form1
         // 
         // txtDefaultInstallPath
         // 
-        txtDefaultInstallPath.Location = new Point(359, 437);
+        txtDefaultInstallPath.Location = new Point(359, 461);
         txtDefaultInstallPath.Name = "txtDefaultInstallPath";
         txtDefaultInstallPath.Size = new Size(257, 23);
         txtDefaultInstallPath.TabIndex = 27;
@@ -351,7 +357,7 @@ partial class Form1
         // 
         // btnBrowseDefaultInstallPath
         // 
-        btnBrowseDefaultInstallPath.Location = new Point(622, 437);
+        btnBrowseDefaultInstallPath.Location = new Point(622, 461);
         btnBrowseDefaultInstallPath.Name = "btnBrowseDefaultInstallPath";
         btnBrowseDefaultInstallPath.Size = new Size(77, 23);
         btnBrowseDefaultInstallPath.TabIndex = 28;
@@ -364,7 +370,7 @@ partial class Form1
         chkDeleteFilesOnUninstall.AutoSize = true;
         chkDeleteFilesOnUninstall.Checked = true;
         chkDeleteFilesOnUninstall.CheckState = CheckState.Checked;
-        chkDeleteFilesOnUninstall.Location = new Point(99, 461);
+        chkDeleteFilesOnUninstall.Location = new Point(99, 485);
         chkDeleteFilesOnUninstall.Name = "chkDeleteFilesOnUninstall";
         chkDeleteFilesOnUninstall.Size = new Size(218, 19);
         chkDeleteFilesOnUninstall.TabIndex = 29;
@@ -376,18 +382,60 @@ partial class Form1
         chkOverwriteFiles.AutoSize = true;
         chkOverwriteFiles.Checked = true;
         chkOverwriteFiles.CheckState = CheckState.Checked;
-        chkOverwriteFiles.Location = new Point(359, 461);
+        chkOverwriteFiles.Location = new Point(359, 485);
         chkOverwriteFiles.Name = "chkOverwriteFiles";
         chkOverwriteFiles.Size = new Size(202, 19);
         chkOverwriteFiles.TabIndex = 30;
         chkOverwriteFiles.Text = "설치 시 config/dll 파일 덮어쓰기";
         chkOverwriteFiles.UseVisualStyleBackColor = true;
         // 
+        // menuStrip1
+        // 
+        menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
+        menuStrip1.Location = new Point(0, 0);
+        menuStrip1.Name = "menuStrip1";
+        menuStrip1.Size = new Size(800, 24);
+        menuStrip1.TabIndex = 52;
+        menuStrip1.Text = "menuStrip1";
+        // 
+        // fileToolStripMenuItem
+        // 
+        fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { loadHistoryToolStripMenuItem, saveCurrentToolStripMenuItem });
+        fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+        fileToolStripMenuItem.Size = new Size(43, 20);
+        fileToolStripMenuItem.Text = "파일";
+        // 
+        // loadHistoryToolStripMenuItem
+        // 
+        loadHistoryToolStripMenuItem.Name = "loadHistoryToolStripMenuItem";
+        loadHistoryToolStripMenuItem.Size = new Size(183, 22);
+        loadHistoryToolStripMenuItem.Text = "히스토리에서 로드...";
+        loadHistoryToolStripMenuItem.Click += loadHistoryToolStripMenuItem_Click;
+        // 
+        // saveCurrentToolStripMenuItem
+        // 
+        saveCurrentToolStripMenuItem.Name = "saveCurrentToolStripMenuItem";
+        saveCurrentToolStripMenuItem.Size = new Size(183, 22);
+        saveCurrentToolStripMenuItem.Text = "현재 설정 저장";
+        saveCurrentToolStripMenuItem.Click += saveCurrentToolStripMenuItem_Click;
+        // 
+        // btnLoadHistory
+        // 
+        btnLoadHistory.Location = new Point(705, 44);
+        btnLoadHistory.Name = "btnLoadHistory";
+        btnLoadHistory.Size = new Size(83, 23);
+        btnLoadHistory.TabIndex = 53;
+        btnLoadHistory.Text = "히스토리";
+        btnLoadHistory.UseVisualStyleBackColor = true;
+        btnLoadHistory.Click += btnLoadHistory_Click;
+        // 
         // Form1
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(800, 828);
+        ClientSize = new Size(800, 852);
+        Controls.Add(btnLoadHistory);
+        Controls.Add(menuStrip1);
         Controls.Add(chkOverwriteFiles);
         Controls.Add(chkDeleteFilesOnUninstall);
         Controls.Add(btnBrowseDefaultInstallPath);
@@ -422,8 +470,13 @@ partial class Form1
         Controls.Add(lblAppName);
         Controls.Add(txtAppName);
         Icon = (Icon)resources.GetObject("$this.Icon");
+        MainMenuStrip = menuStrip1;
         Name = "Form1";
         Text = "InstallBuilder";
+        FormClosing += Form1_FormClosing;
+        Load += Form1_Load;
+        menuStrip1.ResumeLayout(false);
+        menuStrip1.PerformLayout();
         ResumeLayout(false);
         PerformLayout();
     }
@@ -463,4 +516,9 @@ partial class Form1
     private Button btnBrowseDefaultInstallPath;
     private CheckBox chkDeleteFilesOnUninstall;
     private CheckBox chkOverwriteFiles;
+    private MenuStrip menuStrip1;
+    private ToolStripMenuItem fileToolStripMenuItem;
+    private ToolStripMenuItem loadHistoryToolStripMenuItem;
+    private ToolStripMenuItem saveCurrentToolStripMenuItem;
+    private Button btnLoadHistory;
 }
