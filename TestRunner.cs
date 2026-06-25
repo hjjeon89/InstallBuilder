@@ -216,7 +216,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 DisableProgramGroupPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 
 [Languages]
 Name: ""korean""; MessagesFile: ""compiler:Languages\Korean.isl""

@@ -54,6 +54,8 @@ partial class Form1
         btnBrowseAdditionalFilesDest = new Button();
         lblVersion = new Label();
         txtVersion = new TextBox();
+        lblAppName = new Label();
+        txtAppName = new TextBox();
         btnAbout = new Button();
         lblDefaultInstallPath = new Label();
         txtDefaultInstallPath = new TextBox();
@@ -63,7 +65,7 @@ partial class Form1
         SuspendLayout();
         // 
         // txtProjectPath
-        //
+        // 
         txtProjectPath.AllowDrop = true;
         txtProjectPath.Location = new Point(99, 20);
         txtProjectPath.Name = "txtProjectPath";
@@ -73,26 +75,26 @@ partial class Form1
         txtProjectPath.DragEnter += txtProjectPath_DragEnter;
         // 
         // txtOutputPath
-        //
-        txtOutputPath.Location = new Point(99, 490);
+        // 
+        txtOutputPath.Location = new Point(99, 520);
         txtOutputPath.Name = "txtOutputPath";
         txtOutputPath.Size = new Size(600, 23);
         txtOutputPath.TabIndex = 1;
         txtOutputPath.Text = "D:\\Installer";
-        //
+        // 
         // lblProjectPath
-        //
+        // 
         lblProjectPath.AutoSize = true;
         lblProjectPath.Location = new Point(12, 23);
         lblProjectPath.Name = "lblProjectPath";
         lblProjectPath.Size = new Size(86, 15);
         lblProjectPath.TabIndex = 2;
         lblProjectPath.Text = "프로젝트 경로:";
-        //
+        // 
         // lblOutputPath
-        //
+        // 
         lblOutputPath.AutoSize = true;
-        lblOutputPath.Location = new Point(12, 493);
+        lblOutputPath.Location = new Point(12, 523);
         lblOutputPath.Name = "lblOutputPath";
         lblOutputPath.Size = new Size(62, 15);
         lblOutputPath.TabIndex = 3;
@@ -109,40 +111,40 @@ partial class Form1
         btnBrowseProject.Click += btnBrowseProject_Click;
         // 
         // btnBrowseOutput
-        //
-        btnBrowseOutput.Location = new Point(705, 490);
+        // 
+        btnBrowseOutput.Location = new Point(705, 520);
         btnBrowseOutput.Name = "btnBrowseOutput";
         btnBrowseOutput.Size = new Size(83, 23);
         btnBrowseOutput.TabIndex = 5;
         btnBrowseOutput.Text = "찾아보기...";
         btnBrowseOutput.UseVisualStyleBackColor = true;
         btnBrowseOutput.Click += btnBrowseOutput_Click;
-        //
+        // 
         // btnBuild
-        //
+        // 
         btnBuild.Font = new Font("맑은 고딕", 9F, FontStyle.Bold);
-        btnBuild.Location = new Point(12, 520);
+        btnBuild.Location = new Point(12, 550);
         btnBuild.Name = "btnBuild";
         btnBuild.Size = new Size(776, 40);
         btnBuild.TabIndex = 6;
         btnBuild.Text = "설치파일 생성";
         btnBuild.UseVisualStyleBackColor = true;
         btnBuild.Click += btnBuild_Click;
-        //
+        // 
         // txtLog
-        //
-        txtLog.Location = new Point(12, 586);
+        // 
+        txtLog.Location = new Point(12, 616);
         txtLog.Multiline = true;
         txtLog.Name = "txtLog";
         txtLog.ReadOnly = true;
         txtLog.ScrollBars = ScrollBars.Vertical;
         txtLog.Size = new Size(776, 200);
         txtLog.TabIndex = 7;
-        //
+        // 
         // lblLog
-        //
+        // 
         lblLog.AutoSize = true;
-        lblLog.Location = new Point(12, 568);
+        lblLog.Location = new Point(12, 596);
         lblLog.Name = "lblLog";
         lblLog.Size = new Size(34, 15);
         lblLog.TabIndex = 8;
@@ -159,7 +161,7 @@ partial class Form1
         lblDllFiles.Text = "DLL 및 관련 파일 (Drag && Drop)";
         // 
         // lstDllFiles
-        //
+        // 
         lstDllFiles.AllowDrop = true;
         lstDllFiles.FormattingEnabled = true;
         lstDllFiles.Location = new Point(12, 78);
@@ -228,7 +230,7 @@ partial class Form1
         lblAdditionalFiles.Text = "추가 파일 (config, text, json 등, Drag && Drop)";
         // 
         // lstAdditionalFiles
-        //
+        // 
         lstAdditionalFiles.AllowDrop = true;
         lstAdditionalFiles.FormattingEnabled = true;
         lstAdditionalFiles.Location = new Point(12, 268);
@@ -303,8 +305,25 @@ partial class Form1
         txtVersion.TabIndex = 24;
         txtVersion.Text = "1.0.0";
         // 
+        // lblAppName
+        // 
+        lblAppName.AutoSize = true;
+        lblAppName.Location = new Point(12, 489);
+        lblAppName.Name = "lblAppName";
+        lblAppName.Size = new Size(70, 15);
+        lblAppName.TabIndex = 50;
+        lblAppName.Text = "프로그램명:";
+        // 
+        // txtAppName
+        // 
+        txtAppName.Location = new Point(99, 486);
+        txtAppName.Name = "txtAppName";
+        txtAppName.PlaceholderText = "제어판에 표시될 프로그램 이름 (비워두면 프로젝트명 사용)";
+        txtAppName.Size = new Size(600, 23);
+        txtAppName.TabIndex = 51;
+        // 
         // btnAbout
-        //
+        // 
         btnAbout.Location = new Point(705, 437);
         btnAbout.Name = "btnAbout";
         btnAbout.Size = new Size(83, 23);
@@ -312,26 +331,26 @@ partial class Form1
         btnAbout.Text = "정보보기";
         btnAbout.UseVisualStyleBackColor = true;
         btnAbout.Click += btnAbout_Click;
-        //
+        // 
         // lblDefaultInstallPath
-        //
+        // 
         lblDefaultInstallPath.AutoSize = true;
         lblDefaultInstallPath.Location = new Point(255, 440);
         lblDefaultInstallPath.Name = "lblDefaultInstallPath";
-        lblDefaultInstallPath.Size = new Size(98, 15);
+        lblDefaultInstallPath.Size = new Size(90, 15);
         lblDefaultInstallPath.TabIndex = 26;
         lblDefaultInstallPath.Text = "기본 설치 경로:";
-        //
+        // 
         // txtDefaultInstallPath
-        //
+        // 
         txtDefaultInstallPath.Location = new Point(359, 437);
         txtDefaultInstallPath.Name = "txtDefaultInstallPath";
         txtDefaultInstallPath.Size = new Size(257, 23);
         txtDefaultInstallPath.TabIndex = 27;
         txtDefaultInstallPath.Text = "{autopf}\\{AppName}";
-        //
+        // 
         // btnBrowseDefaultInstallPath
-        //
+        // 
         btnBrowseDefaultInstallPath.Location = new Point(622, 437);
         btnBrowseDefaultInstallPath.Name = "btnBrowseDefaultInstallPath";
         btnBrowseDefaultInstallPath.Size = new Size(77, 23);
@@ -339,36 +358,36 @@ partial class Form1
         btnBrowseDefaultInstallPath.Text = "찾아보기...";
         btnBrowseDefaultInstallPath.UseVisualStyleBackColor = true;
         btnBrowseDefaultInstallPath.Click += btnBrowseDefaultInstallPath_Click;
-        //
+        // 
         // chkDeleteFilesOnUninstall
-        //
+        // 
         chkDeleteFilesOnUninstall.AutoSize = true;
         chkDeleteFilesOnUninstall.Checked = true;
         chkDeleteFilesOnUninstall.CheckState = CheckState.Checked;
         chkDeleteFilesOnUninstall.Location = new Point(99, 461);
         chkDeleteFilesOnUninstall.Name = "chkDeleteFilesOnUninstall";
-        chkDeleteFilesOnUninstall.Size = new Size(242, 19);
+        chkDeleteFilesOnUninstall.Size = new Size(218, 19);
         chkDeleteFilesOnUninstall.TabIndex = 29;
         chkDeleteFilesOnUninstall.Text = "제거 시 config/dll 파일도 함께 삭제";
         chkDeleteFilesOnUninstall.UseVisualStyleBackColor = true;
-        //
+        // 
         // chkOverwriteFiles
-        //
+        // 
         chkOverwriteFiles.AutoSize = true;
         chkOverwriteFiles.Checked = true;
         chkOverwriteFiles.CheckState = CheckState.Checked;
         chkOverwriteFiles.Location = new Point(359, 461);
         chkOverwriteFiles.Name = "chkOverwriteFiles";
-        chkOverwriteFiles.Size = new Size(242, 19);
+        chkOverwriteFiles.Size = new Size(202, 19);
         chkOverwriteFiles.TabIndex = 30;
         chkOverwriteFiles.Text = "설치 시 config/dll 파일 덮어쓰기";
         chkOverwriteFiles.UseVisualStyleBackColor = true;
-        //
+        // 
         // Form1
-        //
+        // 
         AutoScaleDimensions = new SizeF(7F, 15F);
         AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(800, 800);
+        ClientSize = new Size(800, 828);
         Controls.Add(chkOverwriteFiles);
         Controls.Add(chkDeleteFilesOnUninstall);
         Controls.Add(btnBrowseDefaultInstallPath);
@@ -400,6 +419,8 @@ partial class Form1
         Controls.Add(lblProjectPath);
         Controls.Add(txtOutputPath);
         Controls.Add(txtProjectPath);
+        Controls.Add(lblAppName);
+        Controls.Add(txtAppName);
         Icon = (Icon)resources.GetObject("$this.Icon");
         Name = "Form1";
         Text = "InstallBuilder";
@@ -434,6 +455,8 @@ partial class Form1
     private Button btnBrowseAdditionalFilesDest;
     private Label lblVersion;
     private TextBox txtVersion;
+    private Label lblAppName;
+    private TextBox txtAppName;
     private Button btnAbout;
     private Label lblDefaultInstallPath;
     private TextBox txtDefaultInstallPath;

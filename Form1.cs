@@ -70,8 +70,18 @@ public partial class Form1 : Form
             ofd.Title = "프로젝트 파일 선택";
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                txtProjectPath.Text = ofd.FileName;
+                SetProjectPath(ofd.FileName);
             }
+        }
+    }
+
+    private void SetProjectPath(string projectPath)
+    {
+        txtProjectPath.Text = projectPath;
+        // 프로그램명이 비어있으면 프로젝트명으로 자동 설정
+        if (string.IsNullOrWhiteSpace(txtAppName.Text))
+        {
+            txtAppName.Text = Path.GetFileNameWithoutExtension(projectPath);
         }
     }
 
@@ -91,7 +101,7 @@ public partial class Form1 : Form
             // .csproj 파일만 허용
             if (file.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
             {
-                txtProjectPath.Text = file;
+                SetProjectPath(file);
                 LogMessage($"프로젝트 파일 추가됨 (Drag & Drop): {file}");
             }
             else
@@ -257,24 +267,32 @@ public partial class Form1 : Form
 
         string buildOutput;
 
-        // .NET Framework 프로젝트는 bin\Release\ 직접 사용할 수도 있음
+        // .NET Framework 프로젝트는 bin\Release\ 직접 사용
         // .NET Core/5+는 bin\Release\net6.0\ 같은 하위 폴더 사용
-        var frameworkDirs = Directory.GetDirectories(releasePath).OrderByDescending(d => d).ToList();
 
-        if (frameworkDirs.Count > 0)
+        // 먼저 Release 폴더에 .exe가 있는지 확인 (.NET Framework 프로젝트)
+        var exeFiles = Directory.GetFiles(releasePath, "*.exe");
+        if (exeFiles.Length > 0)
         {
-            // 하위 폴더가 있으면 최신 프레임워크 폴더 사용
-            buildOutput = frameworkDirs[0];
-            LogMessage($"빌드 출력 경로: {buildOutput}");
+            // Release 폴더에 .exe가 있으면 바로 사용 (.NET Framework)
+            buildOutput = releasePath;
+            LogMessage($"빌드 출력 경로 (.NET Framework): {buildOutput}");
         }
         else
         {
-            // 하위 폴더가 없으면 Release 폴더 자체 사용 (.NET Framework 구형 프로젝트)
-            var files = Directory.GetFiles(releasePath, "*.exe");
-            if (files.Length > 0)
+            // .exe가 없으면 net*.* 패턴의 하위 폴더 찾기 (.NET Core/5+)
+            var frameworkDirs = Directory.GetDirectories(releasePath)
+                .Where(d => System.Text.RegularExpressions.Regex.IsMatch(
+                    Path.GetFileName(d),
+                    @"^net\d+(\.\d+)?(-windows)?$",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                .OrderByDescending(d => d)
+                .ToList();
+
+            if (frameworkDirs.Count > 0)
             {
-                buildOutput = releasePath;
-                LogMessage($"빌드 출력 경로 (.NET Framework): {buildOutput}");
+                buildOutput = frameworkDirs[0];
+                LogMessage($"빌드 출력 경로 (.NET): {buildOutput}");
             }
             else
             {
@@ -284,6 +302,10 @@ public partial class Form1 : Form
 
         // 프로젝트 이름 추출
         string projectName = Path.GetFileNameWithoutExtension(projectPath);
+
+        // 실행 파일명 결정 (AssemblyName 또는 프로젝트명)
+        string exeName = GetAssemblyName(projectContent) ?? projectName;
+        LogMessage($"실행 파일명: {exeName}.exe");
 
         // 설치파일 생성을 위한 임시 디렉토리 생성
         string tempInstallerDir = Path.Combine(outputDir, $"{projectName}_Installer_Temp");
@@ -368,17 +390,17 @@ public partial class Form1 : Form
         }
 
         // Inno Setup 스크립트 생성 및 실행
-        await CreateAndRunInnoSetupAsync(projectName, tempInstallerDir, outputDir);
+        await CreateAndRunInnoSetupAsync(projectName, exeName, tempInstallerDir, outputDir);
 
         // 임시 디렉토리 삭제
         Directory.Delete(tempInstallerDir, true);
     }
 
-    private async Task CreateAndRunInnoSetupAsync(string projectName, string sourceDir, string outputDir)
+    private async Task CreateAndRunInnoSetupAsync(string projectName, string exeBaseName, string sourceDir, string outputDir)
     {
         LogMessage($"설치파일 생성 중: {projectName}");
 
-        string exeName = $"{projectName}.exe";
+        string exeName = $"{exeBaseName}.exe";
 
         // WiX Toolset 경로 확인
         string? wixPath = FindWixToolset();
@@ -406,7 +428,7 @@ public partial class Form1 : Form
             if (isccPath != null)
             {
                 LogMessage("Inno Setup을 사용하여 설치파일을 생성합니다.");
-                await CreateInnoSetupInstallerAsync(projectName, sourceDir, outputDir, isccPath);
+                await CreateInnoSetupInstallerAsync(projectName, exeBaseName, sourceDir, outputDir, isccPath);
             }
             else
             {
@@ -495,6 +517,23 @@ public partial class Form1 : Form
         return false;
     }
 
+    private string? GetAssemblyName(string projectContent)
+    {
+        // csproj에서 <AssemblyName> 추출
+        var match = System.Text.RegularExpressions.Regex.Match(
+            projectContent,
+            @"<AssemblyName>([^<]+)</AssemblyName>",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        );
+
+        if (match.Success)
+        {
+            return match.Groups[1].Value.Trim();
+        }
+
+        return null;
+    }
+
     private string DetectPlatform(string projectContent)
     {
         // Release Configuration의 PlatformTarget 먼저 확인
@@ -509,7 +548,7 @@ public partial class Form1 : Form
             string platform = releaseMatch.Groups[1].Value.Trim();
             if (platform.Equals("AnyCPU", StringComparison.OrdinalIgnoreCase))
             {
-                return "Any CPU";
+                return "AnyCPU";  // MSBuild 명령줄에서는 공백 없이 "AnyCPU" 사용
             }
             return platform;
         }
@@ -526,7 +565,7 @@ public partial class Form1 : Form
             string platform = defaultPlatformMatch.Groups[1].Value.Trim();
             if (platform.Equals("AnyCPU", StringComparison.OrdinalIgnoreCase))
             {
-                return "Any CPU";
+                return "AnyCPU";  // MSBuild 명령줄에서는 공백 없이 "AnyCPU" 사용
             }
             return platform;
         }
@@ -543,13 +582,14 @@ public partial class Form1 : Form
             string platform = platformTargetMatch.Groups[1].Value.Trim();
             if (platform.Equals("AnyCPU", StringComparison.OrdinalIgnoreCase))
             {
-                return "Any CPU";
+                return "AnyCPU";  // MSBuild 명령줄에서는 공백 없이 "AnyCPU" 사용
             }
             return platform;
         }
 
-        // 기본값: Any CPU (대부분의 .NET 프로젝트 기본값)
-        return "Any CPU";
+        // 기본값: AnyCPU (대부분의 .NET 프로젝트 기본값)
+        // MSBuild 명령줄에서는 공백 없이 "AnyCPU" 사용해야 함
+        return "AnyCPU";
     }
 
     private string? FindMSBuildPath()
@@ -702,13 +742,10 @@ public partial class Form1 : Form
         if (File.Exists(wixobjPath)) File.Delete(wixobjPath);
     }
 
-    private async Task CreateInnoSetupInstallerAsync(string projectName, string sourceDir, string outputDir, string isccPath)
+    private async Task CreateInnoSetupInstallerAsync(string projectName, string exeBaseName, string sourceDir, string outputDir, string isccPath)
     {
-        string exeName = $"{projectName}.exe";
+        string exeName = $"{exeBaseName}.exe";
         string scriptPath = Path.Combine(Path.GetTempPath(), $"{projectName}_setup.iss");
-
-        // 프로그램 이름 기반 고정 GUID 생성 (동일 프로그램은 항상 같은 GUID 사용)
-        string appId = GenerateConsistentGuid(projectName);
 
         // Inno Setup 스크립트 생성
         // 주의:
@@ -727,6 +764,7 @@ public partial class Form1 : Form
         string defaultInstallPath = "{autopf}\\{#MyAppName}";
         bool deleteFilesOnUninstall = true;
         bool overwriteFiles = true;
+        string appDisplayName = projectName;  // 제어판에 표시될 이름
 
         if (txtVersion.InvokeRequired)
         {
@@ -736,6 +774,10 @@ public partial class Form1 : Form
                 defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
                 deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
                 overwriteFiles = chkOverwriteFiles.Checked;
+                if (!string.IsNullOrWhiteSpace(txtAppName.Text))
+                {
+                    appDisplayName = txtAppName.Text.Trim();
+                }
             }));
         }
         else
@@ -744,7 +786,15 @@ public partial class Form1 : Form
             defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
             deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
             overwriteFiles = chkOverwriteFiles.Checked;
+            if (!string.IsNullOrWhiteSpace(txtAppName.Text))
+            {
+                appDisplayName = txtAppName.Text.Trim();
+            }
         }
+
+        // 프로그램명 기반 고정 GUID 생성 (동일 프로그램은 항상 같은 GUID 사용)
+        // AppId는 프로그램명(표시이름) 기준으로 생성 - 같은 이름이면 업그레이드로 처리
+        string appId = GenerateConsistentGuid(appDisplayName);
 
         // 복사 위치 경로 변환 (Inno Setup 형식으로)
         string dllDestInnoPath = ConvertToInnoSetupPath(txtDllDestPath.Text);
@@ -799,7 +849,7 @@ public partial class Form1 : Form
             uninstallDeleteSection.AppendLine($@"Type: filesandordirs; Name: ""{additionalDestInnoPath}""; Tasks: deleteconfig");
         }
 
-        string script = $@"#define MyAppName ""{projectName}""
+        string script = $@"#define MyAppName ""{appDisplayName}""
 #define MyAppVersion ""{version}""
 #define MyAppPublisher ""GreenPower""
 #define MyAppExeName ""{exeName}""
@@ -818,7 +868,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 DisableProgramGroupPage=yes
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
 
 [Languages]
 Name: ""korean""; MessagesFile: ""compiler:Languages\Korean.isl""
