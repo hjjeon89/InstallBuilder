@@ -46,6 +46,7 @@ public partial class Form1 : Form
             AdditionalFiles = new List<string>(additionalFiles),
             OverwriteFiles = chkOverwriteFiles.Checked,
             DeleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked,
+            EnglishInstaller = chkEnglishInstaller.Checked,
             LastModified = DateTime.Now
         };
     }
@@ -79,6 +80,7 @@ public partial class Form1 : Form
 
             chkOverwriteFiles.Checked = history.OverwriteFiles;
             chkDeleteFilesOnUninstall.Checked = history.DeleteFilesOnUninstall;
+            chkEnglishInstaller.Checked = history.EnglishInstaller;
         }
         finally
         {
@@ -834,6 +836,20 @@ public partial class Form1 : Form
         return null;
     }
 
+    private bool GetEnglishInstallerFlag()
+    {
+        bool englishInstaller = false;
+        if (chkEnglishInstaller.InvokeRequired)
+        {
+            chkEnglishInstaller.Invoke(new Action(() => { englishInstaller = chkEnglishInstaller.Checked; }));
+        }
+        else
+        {
+            englishInstaller = chkEnglishInstaller.Checked;
+        }
+        return englishInstaller;
+    }
+
     private async Task CreateWixInstallerAsync(string projectName, string sourceDir, string outputDir, string wixPath)
     {
         string exeName = $"{projectName}.exe";
@@ -852,6 +868,11 @@ public partial class Form1 : Form
         }
 
         string msiPath = Path.Combine(outputDir, $"{projectName}_{version}_Setup.msi");
+
+        // 언어/코드페이지 설정 (영문 설치파일 여부)
+        bool englishInstaller = GetEnglishInstallerFlag();
+        string wixLanguage = englishInstaller ? "1033" : "1042";
+        string wixCodepage = englishInstaller ? "1252" : "949";
 
         // GUID 생성
         string productGuid = Guid.NewGuid().ToString().ToUpper();
@@ -876,11 +897,11 @@ public partial class Form1 : Form
         string wxsContent = $@"<?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
   <Product Name='{projectName}' Id='{productGuid}' UpgradeCode='{upgradeGuid}'
-    Language='1042' Codepage='949' Version='1.0.0' Manufacturer='GreenPower'>
+    Language='{wixLanguage}' Codepage='{wixCodepage}' Version='1.0.0' Manufacturer='GreenPower'>
 
     <Package Id='*' Keywords='Installer' Description='{projectName} Installer'
       Comments='{projectName} Installer' Manufacturer='GreenPower'
-      InstallerVersion='200' Languages='1042' Compressed='yes' SummaryCodepage='949' />
+      InstallerVersion='200' Languages='{wixLanguage}' Compressed='yes' SummaryCodepage='{wixCodepage}' />
 
     <Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' />
 
@@ -974,6 +995,7 @@ public partial class Form1 : Form
         string defaultInstallPath = "{autopf}\\{#MyAppName}";
         bool deleteFilesOnUninstall = true;
         bool overwriteFiles = true;
+        bool englishInstaller = false;
         string appDisplayName = projectName;  // 제어판에 표시될 이름
 
         if (txtVersion.InvokeRequired)
@@ -984,6 +1006,7 @@ public partial class Form1 : Form
                 defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
                 deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
                 overwriteFiles = chkOverwriteFiles.Checked;
+                englishInstaller = chkEnglishInstaller.Checked;
                 if (!string.IsNullOrWhiteSpace(txtAppName.Text))
                 {
                     appDisplayName = txtAppName.Text.Trim();
@@ -996,6 +1019,7 @@ public partial class Form1 : Form
             defaultInstallPath = txtDefaultInstallPath.Text.Replace("{AppName}", "{#MyAppName}");
             deleteFilesOnUninstall = chkDeleteFilesOnUninstall.Checked;
             overwriteFiles = chkOverwriteFiles.Checked;
+            englishInstaller = chkEnglishInstaller.Checked;
             if (!string.IsNullOrWhiteSpace(txtAppName.Text))
             {
                 appDisplayName = txtAppName.Text.Trim();
@@ -1010,6 +1034,41 @@ public partial class Form1 : Form
         string dllDestInnoPath = ConvertToInnoSetupPath(txtDllDestPath.Text);
         string additionalDestInnoPath = ConvertToInnoSetupPath(txtAdditionalFilesDestPath.Text);
 
+        // 언어별 문구 (영문 설치파일 여부에 따라 [Languages]/[Tasks]/[Code] 텍스트 결정)
+        string languagesSection = englishInstaller
+            ? @"Name: ""english""; MessagesFile: ""compiler:Default.isl"""
+            : @"Name: ""korean""; MessagesFile: ""compiler:Languages\Korean.isl""";
+
+        string taskOverwriteDesc = englishInstaller
+            ? "Overwrite existing config/DLL files with the new ones"
+            : "기존 설정/DLL 파일이 있어도 새 파일로 덮어쓰기";
+        string taskDeleteDesc = englishInstaller
+            ? "Also delete config/DLL files when uninstalling"
+            : "프로그램 제거 시 설정/DLL 파일도 함께 삭제";
+
+        string uninstallPageCaption = englishInstaller ? "Removing Previous Version" : "기존 버전 제거";
+        string uninstallPageDesc = englishInstaller ? "Removing the previous version..." : "이전 버전을 제거하는 중입니다...";
+        string uninstallProgressCaption = englishInstaller ? "Removing the previous version..." : "기존 버전을 제거하는 중입니다...";
+        string uninstallProgressDesc = englishInstaller ? "Please wait. (Running unins000.exe)" : "잠시만 기다려주세요. (unins000.exe 실행 중)";
+
+        string msgOldVersionFound = englishInstaller
+            ? "'A previous version of this program is already installed.' + #13#10 + #13#10 + " +
+              "'Previous version: ' + UninstallString + #13#10 + #13#10 + " +
+              "'The existing version will be removed automatically before installing the new version.' + #13#10 + #13#10 + " +
+              "'Do you want to continue?'"
+            : "'이 프로그램의 이전 버전이 이미 설치되어 있습니다.' + #13#10 + #13#10 + " +
+              "'기존 버전: ' + UninstallString + #13#10 + #13#10 + " +
+              "'기존 버전을 자동으로 제거한 후 새 버전을 설치합니다.' + #13#10 + #13#10 + " +
+              "'계속하시겠습니까?'";
+
+        string msgRemovalSuccess = englishInstaller
+            ? "'The previous version was removed successfully.' + #13#10 + #13#10 + 'Continuing with the new version installation.'"
+            : "'기존 버전이 성공적으로 제거되었습니다.' + #13#10 + #13#10 + '이어서 새 버전 설치를 진행합니다.'";
+
+        string msgRemovalFailed = englishInstaller
+            ? "'An error occurred while removing the existing program.' + #13#10 + 'Exit code: ' + IntToStr(ResultCode) + #13#10 + #13#10 + 'Please remove the program manually, then try installing again.'"
+            : "'기존 프로그램을 제거하는 중 오류가 발생했습니다.' + #13#10 + '종료 코드: ' + IntToStr(ResultCode) + #13#10 + #13#10 + '수동으로 프로그램을 제거한 후 다시 설치해주세요.'";
+
         // [Tasks] 섹션 생성 (설치 시 사용자가 선택 가능)
         var tasksSection = new System.Text.StringBuilder();
         bool hasConfigFiles = dllFiles.Count > 0 || additionalFiles.Count > 0;
@@ -1020,8 +1079,8 @@ public partial class Form1 : Form
             string overwriteChecked = overwriteFiles ? "" : " unchecked";
             string deleteChecked = deleteFilesOnUninstall ? "" : " unchecked";
 
-            tasksSection.AppendLine($@"Name: ""overwriteconfig""; Description: ""기존 설정/DLL 파일이 있어도 새 파일로 덮어쓰기""; Flags:{overwriteChecked}");
-            tasksSection.AppendLine($@"Name: ""deleteconfig""; Description: ""프로그램 제거 시 설정/DLL 파일도 함께 삭제""; Flags:{deleteChecked}");
+            tasksSection.AppendLine($@"Name: ""overwriteconfig""; Description: ""{taskOverwriteDesc}""; Flags:{overwriteChecked}");
+            tasksSection.AppendLine($@"Name: ""deleteconfig""; Description: ""{taskDeleteDesc}""; Flags:{deleteChecked}");
         }
 
         // [Files] 섹션 생성
@@ -1081,7 +1140,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 
 [Languages]
-Name: ""korean""; MessagesFile: ""compiler:Languages\Korean.isl""
+{languagesSection}
 
 {(tasksSection.Length > 0 ? $@"[Tasks]
 {tasksSection}" : "")}
@@ -1105,7 +1164,7 @@ var
 
 procedure InitializeWizard;
 begin
-  UninstallProgressPage := CreateOutputProgressPage('기존 버전 제거', '이전 버전을 제거하는 중입니다...');
+  UninstallProgressPage := CreateOutputProgressPage('{uninstallPageCaption}', '{uninstallPageDesc}');
 end;
 
 function InitializeSetup(): Boolean;
@@ -1127,15 +1186,12 @@ begin
     UninstallString := RemoveQuotes(UninstallString);
 
     // 사용자에게 기존 버전 제거 여부 확인
-    if MsgBox('이 프로그램의 이전 버전이 이미 설치되어 있습니다.' + #13#10 + #13#10 +
-              '기존 버전: ' + UninstallString + #13#10 + #13#10 +
-              '기존 버전을 자동으로 제거한 후 새 버전을 설치합니다.' + #13#10 + #13#10 +
-              '계속하시겠습니까?', mbConfirmation, MB_YESNO) = IDYES then
+    if MsgBox({msgOldVersionFound}, mbConfirmation, MB_YESNO) = IDYES then
     begin
       // 제거 진행 화면 표시
       UninstallProgressPage.Show;
       try
-        UninstallProgressPage.SetText('기존 버전을 제거하는 중입니다...', '잠시만 기다려주세요. (unins000.exe 실행 중)');
+        UninstallProgressPage.SetText('{uninstallProgressCaption}', '{uninstallProgressDesc}');
         UninstallProgressPage.SetProgress(0, 100);
 
         // unins000.exe 실행 (SILENT 모드)
@@ -1145,15 +1201,12 @@ begin
           Sleep(1000);  // 파일 정리 대기
           // 제거 성공
           Result := True;
-          MsgBox('기존 버전이 성공적으로 제거되었습니다.' + #13#10 + #13#10 +
-                 '이어서 새 버전 설치를 진행합니다.', mbInformation, MB_OK);
+          MsgBox({msgRemovalSuccess}, mbInformation, MB_OK);
         end
         else
         begin
           // 제거 실패 시 메시지 표시
-          MsgBox('기존 프로그램을 제거하는 중 오류가 발생했습니다.' + #13#10 +
-                 '종료 코드: ' + IntToStr(ResultCode) + #13#10 + #13#10 +
-                 '수동으로 프로그램을 제거한 후 다시 설치해주세요.', mbError, MB_OK);
+          MsgBox({msgRemovalFailed}, mbError, MB_OK);
           Result := False;
         end;
       finally
@@ -1250,6 +1303,8 @@ end;
             version = txtVersion.Text;
         }
 
+        bool englishInstaller = GetEnglishInstallerFlag();
+
         // 7-Zip 경로 확인
         string[] possible7zPaths = new[]
         {
@@ -1281,18 +1336,26 @@ end;
             if (File.Exists(sfxModule))
             {
                 // SFX 설정 파일 생성
+                string sfxTitle = englishInstaller ? $"{projectName} Setup" : $"{projectName} 설치";
+                string sfxPrompt = englishInstaller
+                    ? $"This will install {projectName}.\n\nDo you want to continue?"
+                    : $"이 프로그램은 {projectName}을(를) 설치합니다.\n\n계속하시겠습니까?";
+
                 string configPath = Path.Combine(Path.GetTempPath(), $"{projectName}_config.txt");
                 string configContent = $@";!@Install@!UTF-8!
-Title=""{projectName} 설치""
-BeginPrompt=""이 프로그램은 {projectName}을(를) 설치합니다.\n\n계속하시겠습니까?""
+Title=""{sfxTitle}""
+BeginPrompt=""{sfxPrompt}""
 RunProgram=""CreateDesktopShortcut.bat""
 ;!@InstallEnd@!";
 
                 File.WriteAllText(configPath, configContent);
 
                 // 바로가기 생성 배치 파일 추가
+                string shortcutMessage = englishInstaller
+                    ? $"Creating shortcut for {projectName}"
+                    : $"{projectName} 바로가기 생성 중";
                 string batContent = $@"@echo off
-echo {projectName} 바로가기 생성 중...
+echo {shortcutMessage}...
 set SCRIPT=""%TEMP%\CreateShortcut.vbs""
 echo Set oWS = WScript.CreateObject(""WScript.Shell"") >> %SCRIPT%
 echo sLinkFile = ""%USERPROFILE%\Desktop\{projectName}.lnk"" >> %SCRIPT%

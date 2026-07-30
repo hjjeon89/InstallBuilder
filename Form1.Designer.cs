@@ -62,6 +62,7 @@ partial class Form1
         btnBrowseDefaultInstallPath = new Button();
         chkDeleteFilesOnUninstall = new CheckBox();
         chkOverwriteFiles = new CheckBox();
+        chkEnglishInstaller = new CheckBox();
         menuStrip1 = new MenuStrip();
         fileToolStripMenuItem = new ToolStripMenuItem();
         loadHistoryToolStripMenuItem = new ToolStripMenuItem();
@@ -388,7 +389,17 @@ partial class Form1
         chkOverwriteFiles.TabIndex = 30;
         chkOverwriteFiles.Text = "설치 시 config/dll 파일 덮어쓰기";
         chkOverwriteFiles.UseVisualStyleBackColor = true;
-        // 
+        //
+        // chkEnglishInstaller
+        //
+        chkEnglishInstaller.AutoSize = true;
+        chkEnglishInstaller.Location = new Point(595, 485);
+        chkEnglishInstaller.Name = "chkEnglishInstaller";
+        chkEnglishInstaller.Size = new Size(193, 19);
+        chkEnglishInstaller.TabIndex = 31;
+        chkEnglishInstaller.Text = "영문 설치파일로 생성 (English)";
+        chkEnglishInstaller.UseVisualStyleBackColor = true;
+        //
         // menuStrip1
         // 
         menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem });
@@ -436,6 +447,7 @@ partial class Form1
         ClientSize = new Size(800, 852);
         Controls.Add(btnLoadHistory);
         Controls.Add(menuStrip1);
+        Controls.Add(chkEnglishInstaller);
         Controls.Add(chkOverwriteFiles);
         Controls.Add(chkDeleteFilesOnUninstall);
         Controls.Add(btnBrowseDefaultInstallPath);
@@ -516,6 +528,7 @@ partial class Form1
     private Button btnBrowseDefaultInstallPath;
     private CheckBox chkDeleteFilesOnUninstall;
     private CheckBox chkOverwriteFiles;
+    private CheckBox chkEnglishInstaller;
     private MenuStrip menuStrip1;
     private ToolStripMenuItem fileToolStripMenuItem;
     private ToolStripMenuItem loadHistoryToolStripMenuItem;

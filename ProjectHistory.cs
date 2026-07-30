@@ -15,6 +15,7 @@ namespace InstallerBuilder
         public List<string> AdditionalFiles { get; set; } = new List<string>();
         public bool OverwriteFiles { get; set; } = true;
         public bool DeleteFilesOnUninstall { get; set; } = true;
+        public bool EnglishInstaller { get; set; } = false;
         public DateTime LastModified { get; set; } = DateTime.Now;
     }
 
