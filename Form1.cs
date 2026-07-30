@@ -1423,6 +1423,7 @@ del %SCRIPT%
         }
 
         string capturedVersion = version;
+        bool englishInstaller = GetEnglishInstallerFlag();
 
         await Task.Run(() =>
         {
@@ -1430,8 +1431,14 @@ del %SCRIPT%
             string zipPath = Path.Combine(outputDir, $"{projectName}_{capturedVersion}_Portable.zip");
 
             // 바로가기 생성 배치 파일 추가
+            string shortcutCreatingMessage = englishInstaller
+                ? $"Creating shortcut for {projectName}"
+                : $"{projectName} 바로가기 생성 중";
+            string shortcutCreatedMessage = englishInstaller
+                ? "Shortcut created on the desktop."
+                : "바로가기가 바탕화면에 생성되었습니다.";
             string batContent = $@"@echo off
-echo {projectName} 바로가기 생성 중...
+echo {shortcutCreatingMessage}...
 set SCRIPT=""%TEMP%\CreateShortcut.vbs""
 echo Set oWS = WScript.CreateObject(""WScript.Shell"") >> %SCRIPT%
 echo sLinkFile = ""%USERPROFILE%\Desktop\{projectName}.lnk"" >> %SCRIPT%
@@ -1441,7 +1448,7 @@ echo oLink.WorkingDirectory = ""%~dp0"" >> %SCRIPT%
 echo oLink.Save >> %SCRIPT%
 cscript /nologo %SCRIPT%
 del %SCRIPT%
-echo 바로가기가 바탕화면에 생성되었습니다.
+echo {shortcutCreatedMessage}
 pause
 ";
             string batPath = Path.Combine(sourceDir, "CreateDesktopShortcut.bat");
