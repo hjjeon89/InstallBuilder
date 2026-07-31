@@ -14,7 +14,14 @@ public partial class Form1 : Form
     public Form1()
     {
         InitializeComponent();
+        Text = $"InstallBuilder - V{GetAppVersion()}";
         CheckInnoSetupInstalled();
+    }
+
+    private static string GetAppVersion()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        return version != null ? $"{version.Major}.{version.Minor}.{version.Build}" : "1.0.0";
     }
 
     private void Form1_Load(object? sender, EventArgs e)
@@ -1931,8 +1938,7 @@ pause
 
         // Assembly 정보 가져오기
         string appName = assembly.GetCustomAttribute<AssemblyProductAttribute>()?.Product ?? "InstallBuilder";
-        string version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-                         ?? assembly.GetName().Version?.ToString() ?? "1.0.0";
+        string version = GetAppVersion();
         string authors = assembly.GetCustomAttribute<AssemblyCompanyAttribute>()?.Company ?? "";
         string copyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "";
         string description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? "";
