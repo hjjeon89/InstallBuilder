@@ -9,7 +9,7 @@
     <StartupObject>InstallerBuilder.Program</StartupObject>
 
     <!-- 제작자 정보 (여기서 수정하세요) -->
-    <Version>1.1.2</Version>
+    <Version>1.1.4</Version>
     <Authors>hjjeon</Authors>
     <Company></Company>
     <Copyright></Copyright>
