@@ -503,7 +503,7 @@ public partial class Form1 : Form
             var frameworkDirs = Directory.GetDirectories(releasePath)
                 .Where(d => System.Text.RegularExpressions.Regex.IsMatch(
                     Path.GetFileName(d),
-                    @"^net\d+(\.\d+)?(-windows)?$",
+                    @"^net\d+(\.\d+)?(-windows[\d.]*)?$",
                     System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                 .OrderByDescending(d => d)
                 .ToList();
